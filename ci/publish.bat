@@ -3,7 +3,7 @@
 IF [%1]==[] goto noparam
 
 echo "Copy sources ..."
-xcopy /y ..\src .\src\
+xcopy /E /I /Y ..\src .\src\
 
 echo "Build image '%1' and 'latest'..."
 docker build -t mylabtools/promtail:%1 -t mylabtools/promtail:latest .
