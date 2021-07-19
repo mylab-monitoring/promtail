@@ -7,7 +7,7 @@ positions:
 
 client:
 
-  url: {LOKI_BASE}/loki/api/v1/push
+  url: ${PROMTAIL_LOKI}/loki/api/v1/push
 
 scrape_configs:
 
@@ -17,8 +17,8 @@ scrape_configs:
     
     - labels:
         __path__: /var/lib/docker/containers/*/*.log
-        env: dev
-        host: dev-infonot
+        env: ${PROMTAIL_ENV}
+        host: ${PROMTAIL_HOST}
         
     pipeline_stages:
     
@@ -53,7 +53,7 @@ scrape_configs:
               expression: (?P<metrics_request>^/metrics)$
           - template:
               source: request_type
-              template: "{{if .api_request}}api{{else if .metrics_request}}metrics{{else}}other{{end}}"
+              template: "{{if .api_request}}api{{else if .metrics_request}}metrics{{else}}{{if .request_url}}other{{end}}{{end}}"
               
           - replace:
               source: request_url
