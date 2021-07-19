@@ -1,0 +1,117 @@
+server:
+
+  http_listen_port: 80
+
+positions:
+  filename: /var/lib/promtail/positions.yml
+
+client:
+
+  url: {LOKI_BASE}/loki/api/v1/push
+
+scrape_configs:
+
+  - job_name: container_logs
+    
+    static_configs:
+    
+    - labels:
+        __path__: /var/lib/docker/containers/*/*.log
+        env: dev
+        host: dev-infonot
+        
+    pipeline_stages:
+    
+    - json:
+        expressions:
+          container_name: attrs.tag
+          format: attrs.log_format
+      
+    - labels:
+        container: container_name
+        format:
+        attrs:
+        
+    - labeldrop:
+      - filename
+        
+    - docker: {}
+        
+    - match:
+        selector: '{format="nginx"}'
+        stages:
+        
+          - regex:
+              source: output
+              expression: ^(?P<ip>[\w\.]+) - (?P<user>[^ ]*) \[(?P<timestamp>[^ ]+).*\] "(?P<http_method>[^ ]*) (?P<request_url>[^ ]*) (?P<request_http_protocol>[^ ]*)" (?P<http_status>[\d]+) (?P<bytes_out>[\d]+) "(?P<http_referer>[^"]*)" "(?P<user_agent>[^"]*)"( "(?P<response_time>[\d\.]+)")?
+        
+          - regex:
+              source: request_url
+              expression: ^/api/(?P<api_request>[^/\?\.]+).*$              
+          - regex:
+              source: request_url
+              expression: (?P<metrics_request>^/metrics)$
+          - template:
+              source: request_type
+              template: "{{if .api_request}}api{{else if .metrics_request}}metrics{{else}}other{{end}}"
+              
+          - replace:
+              source: request_url
+              expression: '[\/\-_=]([\dabcdef]{32}|[\d]+)'
+              replace: 'ххх'
+              
+          - regex:
+              source: output
+              expression: (?P<error_level>error|fail|failed|fault|crash|fatal|crit)
+          - regex:
+              source: output
+              expression: (?P<warning_level>warn)
+          - template:
+              source: level
+              template: "{{if .error_level}}error{{else if .warning_level}}warning{{else}}info{{end}}"
+              
+          - labels:
+              http_method:
+              http_status:
+              request_type:
+              request_url:
+              level:
+              
+          - output:
+              source: output
+    
+    - match:
+        selector: '{format="mylab-yaml"}'
+        stages:
+        
+          - output:
+              source: output
+        
+          - replace:
+              expression: '(\n)'
+              replace: ''
+        
+          - multiline:
+              firstline: '^\S+(trce|info|dbug|warn|fatal|fail|crit)\S+: [\w+\.\[\]]+'
+              max_lines: 500
+              
+    - match:
+        selector: '{format="mylab-yaml"}'
+        stages:
+        
+          - regex:
+              expression: 'log_level:\s(?P<level>[\w]+)'
+    
+          - template:
+              source: level
+              template: '{{if .level}}{{.level}}{{else}}info{{end}}'
+    
+          - labels:
+              level:
+
+    - match:
+        selector: '{format=""}'
+        stages:
+        
+          - output:
+              source: output
