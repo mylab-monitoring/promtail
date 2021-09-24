@@ -6,4 +6,5 @@ VOLUME ["/var/lib/promtail"]
 
 EXPOSE 80/tcp
 
-CMD ["-config.file=/etc/promtail/config.yml", "-config.expand-env=true", "-log.level=debug"]
+# CMD ["-config.file=/etc/promtail/config.yml", "-config.expand-env=true", "-log.level=debug"]
+CMD ["-config.file=/etc/promtail/config.yml", "-config.expand-env=true"]
