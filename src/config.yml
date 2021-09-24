@@ -11,25 +11,6 @@ client:
 
 scrape_configs:
 
-  - job_name: journal
-
-    journal:
-      path: /var/log/journal
-      labels:
-        env: ${PROMTAIL_ENV}
-        host: ${PROMTAIL_HOST}
-
-    relabel_configs:
-    - source_labels:
-      - __journal__systemd_unit
-      target_label: systemd_unit
-    - source_labels:
-      - __journal__hostname
-      target_label: nodename
-    - source_labels:
-      - __journal_syslog_identifier
-      target_label: syslog_identifier
-
   - job_name: container_files
     
     static_configs:
@@ -118,9 +99,52 @@ scrape_configs:
         selector: '{format="mylab-yaml"}'
         stages:
         
+          #- regex:
+        #      source: output
+        #      expression: '[^\w]\[\d{2}m[^\w]\[\d{2}m(?P<level>trce|dbug|info|warn|fail|crit)[^\w]\[\d{2}m[^\w]\[\d{2}m[^\w]\[\d{2}m:'
+              #expression: '\d{2}m(?P<dlevel>trce|info|dbug|warn|fatal|fail|crit)'
+        
           - regex:
-              expression: 'log_level:\s(?P<level>[\w]+)'
+              source: output
+              expression: '(?P<level>trce|dbug|info|warn|fail|crit)'
+                                
+#          - labels:
+#              blevel:
+        
+#          - regex:
+#              source: output
+#              expression: '(?P<alevel>/w+)'
+              
+#          - labels:
+#              alevel:
+        
+#          - regex:
+#              source: output
+#              expression: '[^\w]\[\d{2}m[^\w]\[\d{2}m(?P<dlevel>trce|dbug|info|warn|fail|crit)[^\w]\[\d{2}m[^\w]\[\d{2}m[^\w]\[\d{2}m:'
+        
+#          - labels:
+#              dlevel:
+        
+#          - template: 
+#                source: level
+#                template: '{{if .dlevel=="trce"}}trace{{else if .dlevel=="dbug"}}debug{{else if .dlevel=="warn"}}warning{{else if .dlevel=="fatal" || .dlevel=="fail" || .dlevel=="crit"}}error{{else}}info{{end}}'
     
+          - replace:
+              source: level
+              expression: '(trce)'
+              replace: 'trace'
+          - replace:
+              source: level
+              expression: '(dbug)'
+              replace: 'debug'
+          - replace:
+              source: level
+              expression: '(warn)'
+              replace: 'warning'
+          - replace: 
+              source: level
+              expression: '(fatal|fail|crit)'
+              replace: 'error'
           - template:
               source: level
               template: '{{if .level}}{{.level}}{{else}}info{{end}}'
