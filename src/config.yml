@@ -99,36 +99,10 @@ scrape_configs:
         selector: '{format="mylab-yaml"}'
         stages:
         
-          #- regex:
-        #      source: output
-        #      expression: '[^\w]\[\d{2}m[^\w]\[\d{2}m(?P<level>trce|dbug|info|warn|fail|crit)[^\w]\[\d{2}m[^\w]\[\d{2}m[^\w]\[\d{2}m:'
-              #expression: '\d{2}m(?P<dlevel>trce|info|dbug|warn|fatal|fail|crit)'
-        
           - regex:
               source: output
               expression: '(?P<level>trce|dbug|info|warn|fail|crit)'
-                                
-#          - labels:
-#              blevel:
-        
-#          - regex:
-#              source: output
-#              expression: '(?P<alevel>/w+)'
-              
-#          - labels:
-#              alevel:
-        
-#          - regex:
-#              source: output
-#              expression: '[^\w]\[\d{2}m[^\w]\[\d{2}m(?P<dlevel>trce|dbug|info|warn|fail|crit)[^\w]\[\d{2}m[^\w]\[\d{2}m[^\w]\[\d{2}m:'
-        
-#          - labels:
-#              dlevel:
-        
-#          - template: 
-#                source: level
-#                template: '{{if .dlevel=="trce"}}trace{{else if .dlevel=="dbug"}}debug{{else if .dlevel=="warn"}}warning{{else if .dlevel=="fatal" || .dlevel=="fail" || .dlevel=="crit"}}error{{else}}info{{end}}'
-    
+                             
           - replace:
               source: level
               expression: '(trce)'
