@@ -81,7 +81,7 @@ scrape_configs:
               source: output
     
     - match:
-        selector: '{format="mylab-yaml"}'
+        selector: '{format="net"}'
         stages:
         
           - output:
@@ -94,9 +94,9 @@ scrape_configs:
           - multiline:
               firstline: '^\S+(trce|info|dbug|warn|fatal|fail|crit)\S+: [\w+\.\[\]]+'
               max_lines: 500
-              
+
     - match:
-        selector: '{format="mylab-yaml"}'
+        selector: '{format="net"}'
         stages:
         
           - regex:
@@ -122,6 +122,36 @@ scrape_configs:
           - template:
               source: level
               template: '{{if .level}}{{.level}}{{else}}info{{end}}'
+    
+          - labels:
+              level:
+
+    - match:
+        selector: '{format="mylab-yaml"}'
+        stages:
+        
+          - output:
+              source: output
+        
+          - replace:
+              expression: '(\n)'
+              replace: ''
+        
+          - multiline:
+              firstline: '^Message:'
+              max_lines: 500
+              
+    - match:
+        selector: '{format="mylab-yaml"}'
+        stages:
+        
+          - regex:
+              source: output
+              expression: '(?P<level>log_level)'
+                             
+          - template:
+              source: level
+              template: '{{if .level}}{{.level}}{{else}}undefined{{end}}'
     
           - labels:
               level:
